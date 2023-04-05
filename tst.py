@@ -1,34 +1,23 @@
 import cv2 as cv
-import math
-cap = cv.VideoCapture(0)
-size = (1280, 720)
+from math import ceil
 fly = cv.imread('fly64.png')
+point = cv.imread('ref-point.jpg')
+fly_gray = cv.cvtColor(fly, cv.COLOR_BGR2GRAY)
+cv.imshow('orig', fly)
 height, width = fly.shape[:2]
+gray = cv.cvtColor(point, cv.COLOR_BGR2GRAY)
+blurred = cv.GaussianBlur(gray, (21, 21), 0)
+T, blck = cv.threshold(gray, 75, 255, cv.THRESH_BINARY_INV)
+contours, hierarchy = cv.findContours(blck, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_NONE)
+c = max(contours, key=cv.contourArea)
+x, y, w, h = cv.boundingRect(c)
+cv.rectangle(point, (x, y), (x + w, y + h), (0, 255, 0), 1)
+centre = (ceil(x + (w / 2)), ceil(y + (h / 2)))
+fly_x = ceil(centre[0]-width/2)
+fly_y = ceil(centre[1]-height/2)
+roi = point[fly_x:fly_x+width, fly_y:fly_y+height]
+dst = cv.add(roi, fly)
+cv.imshow('point', dst)
 
-if not cap.isOpened():
-    print('Cannot open camera')
-    exit()
-while True:
-    ret, frame = cap.read()
-    frame = cv.resize(frame, size)
-    if not ret:
-        break
-    gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
-    blurred = cv.GaussianBlur(gray, (21, 21), 0)
-    T, blck = cv.threshold(gray, 75, 255, cv.THRESH_BINARY_INV)
-    contours, hierarchy = cv.findContours(blck, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_NONE)
-    if len(contours) > 0:
-        c = max(contours, key=cv.contourArea)
-        x, y, w, h = cv.boundingRect(c)
-        if x+w > (math.ceil(size[0]/2)):
-            cv.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 1)
-        else:
-            cv.rectangle(frame, (x, y), (x + w, y + h), (0, 0, 255), 1)
-    centre = (math.ceil(x+(h/2)), y)
-    cv.imshow('frame', frame)
-
-    if cv.waitKey(1) & 0xFF == ord('q'):
-        break
-# When everything done, release the capture
-cap.release()
+cv.waitKey(0)
 cv.destroyAllWindows()
