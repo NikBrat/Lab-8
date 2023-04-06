@@ -30,7 +30,7 @@ while True:
     cv.rectangle(frame, centre_s, centre_d, (0, 204, 255), 1)
     # Построение прямоугольника вокруг метки
     blurred = cv.GaussianBlur(gray, (21, 21), 0)
-    t, blck = cv.threshold(blurred, 75, 255, cv.THRESH_BINARY_INV)
+    t, blck = cv.threshold(blurred, 115, 255, cv.THRESH_BINARY_INV)
     contours, hierarchy = cv.findContours(blck, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_NONE)
     if len(contours) > 0:
         c = max(contours, key=cv.contourArea)
@@ -39,7 +39,7 @@ while True:
         if (centre_s[0] <= x <= centre_d[0] and centre_s[0] <= x + w <= centre_d[0]) \
                 and (centre_s[1] <= y <= centre_d[1] and centre_s[1] <= y+h <= centre_d[1]):
             # точное совпадение центра мухи и метки. ОЧень капризно работает
-            # if (x + w//2) == centre[0] and (y + h//2) == centre[1]:
+            if (x + w//2) == centre[0] and (y + h//2) == centre[1]:
                 # Начальные координаты для вставки мухи
                 fly_x = centre_s[0] + 72
                 fly_y = centre_s[1] + 69
@@ -59,8 +59,8 @@ while True:
 
                 frame[fly_y:fly_yd, fly_x:fly_xd] = finished_piece
     cv.imshow('frame', frame)
-
     if cv.waitKey(1) & 0xFF == ord('q'):
         break
 
+cv.waitKey(0)
 cv.destroyAllWindows()
