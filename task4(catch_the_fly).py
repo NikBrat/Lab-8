@@ -25,9 +25,9 @@ while True:
     frame = cv.resize(frame, size)
     if not ret:
         break
+    gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
     # Построение центрального прямоугольника
     cv.rectangle(frame, centre_s, centre_d, (0, 204, 255), 1)
-    gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
     # Построение прямоугольника вокруг метки
     blurred = cv.GaussianBlur(gray, (21, 21), 0)
     t, blck = cv.threshold(blurred, 75, 255, cv.THRESH_BINARY_INV)
@@ -36,23 +36,28 @@ while True:
         c = max(contours, key=cv.contourArea)
         x, y, w, h = cv.boundingRect(c)
         cv.rectangle(frame, (x, y), (x + w, y + h), (0, 0, 255), 1)
-        if centre_s[0] <= x <= centre_d[0] and centre_s[1] <= y <= centre_d[1]:
-            # Начальные координаты для вставки мухи
-            fly_x = centre_s[0] + 72
-            fly_y = centre_s[1] + 69
-            print(centre_s, centre_d)
+        if (centre_s[0] <= x <= centre_d[0] and centre_s[0] <= x + w <= centre_d[0]) \
+                and (centre_s[1] <= y <= centre_d[1] and centre_s[1] <= y+h <= centre_d[1]):
+            # точное совпадение центра мухи и метки. ОЧень капризно работает
+            # if (x + w//2) == centre[0] and (y + h//2) == centre[1]:
+                # Начальные координаты для вставки мухи
+                fly_x = centre_s[0] + 72
+                fly_y = centre_s[1] + 69
+                fly_xd = centre_d[0] - 72
+                fly_yd = centre_d[1] - 69
+                print(fly_x, fly_y, fly_xd, fly_yd)
 
-            roi = frame[fly_x:centre_d[0] - 72, fly_y:centre_d[1] - 69]
-            # Ещё раз читаем изображение, fly содержал 3 канала
-            # Необходимо для 'наложения' маски
-            fly = cv.imread('fly64.png')
+                roi = frame[fly_y:fly_yd, fly_x:fly_xd]
+                # Ещё раз читаем изображение, fly содержал 3 канала
+                # Необходимо для 'наложения' маски
+                fly = cv.imread('fly64.png')
 
-            roi_place = cv.bitwise_and(roi, roi, mask=mask_inv)
-            fly_to_roi = cv.bitwise_and(fly, fly, mask=mask)
+                roi_place = cv.bitwise_and(roi, roi, mask=mask_inv)
+                fly_to_roi = cv.bitwise_and(fly, fly, mask=mask)
 
-            finished_piece = cv.add(roi_place, fly_to_roi)
+                finished_piece = cv.add(roi_place, fly_to_roi)
 
-            frame[fly_x:centre_d[0] - 72, fly_y:centre_d[1] - 69] = finished_piece
+                frame[fly_y:fly_yd, fly_x:fly_xd] = finished_piece
     cv.imshow('frame', frame)
 
     if cv.waitKey(1) & 0xFF == ord('q'):
